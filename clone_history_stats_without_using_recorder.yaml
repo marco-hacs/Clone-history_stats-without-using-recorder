@@ -1,0 +1,41 @@
+template:
+  - sensor:
+      - name: "increment_time"
+        unit_of_measurement: min 
+        icon: mdi:history
+        state: >-
+            {%if is_state('switch.luce_studio', 'on') and as_timestamp(states.switch.luce_studio.last_changed) <= as_timestamp(now())%}
+              {{((as_timestamp(now()) - as_timestamp(states.switch.luce_studio.last_changed))/3600)|round(6)}}
+            {% else %}
+              0
+            {% endif %}
+            
+      - name: "time_use_year"
+        icon: mdi:history
+        state: >-
+            {% set hours = states('sensor.increase_time_year') | float(0) %}
+            {% set minutes = ((hours % 1) * 60) | int(0) %}
+            {% set hours = (hours - (hours % 1)) | int(0) %}
+             {% set day = ((hours |int(0) /24))|int(0) %}
+              {% if day|int(0) >0 %}
+                {{day}}d {{(hours|int(0))-(day*24)}}h {{minutes}}m
+              {% elif hours|int(0) >0 %}
+                {{hours}}h {{minutes}}m
+              {% else %}
+                {{minutes}}min
+              {% endif %}
+
+utility_meter:
+  increase_time_year:
+    source: sensor.increment_time
+    cycle: yearly
+
+script:
+  reset_time:
+    sequence:
+      - service: utility_meter.calibrate
+        data:
+          value: "0"
+        target: 
+          entity_id:
+            - sensor.increase_time_year
