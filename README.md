@@ -62,3 +62,5 @@ script:
           entity_id:
             - sensor.increase_time_year
 ``` 
+
+https://community.home-assistant.io/t/clone-history-stats-without-using-recorder/508119
