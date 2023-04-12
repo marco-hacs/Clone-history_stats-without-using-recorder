@@ -1,4 +1,4 @@
-# Clone history_stats without using recorder
+# Clone history_stats without using recorder 
 
 The main problem I encounter in history_stats is having to record the entity_id used in the recorder. This constrains should you want to keep 
 data for a long time to record for many days, bringing a large utlization of resources, with the risk of the db becoming corrupted and losing everything.
@@ -65,14 +65,14 @@ script:
 
 https://community.home-assistant.io/t/clone-history-stats-without-using-recorder/508119
 
-Dalla versione 2023.4 è possibile creare macro per evitare ripetizioni di codice.
+## Since version 2023.4 it is possible to create macros to avoid code repetition.
 
-- Creare una nuova cartella in config dal nome custom_templates
-- Al suo interno creare un file .jinja. Nell'esempio history_stats_custom.jinja e copiare i seguenti template
+- Create a new folder in config named custom_templates.
+- Inside it create a .jinja file. In the example history_stats_custom.jinja and copy the following templates
 
 ``` 
 
-# tempo di utilizzo in sec da passare ad utility_meter
+# usage time in sec to be passed to utility_meter
 
 {% macro time_on(entity_id) %}
 {%if is_state(entity_id, 'on') and (as_timestamp(states[entity_id].last_changed)) <= as_timestamp(now())%}
@@ -80,7 +80,7 @@ Dalla versione 2023.4 è possibile creare macro per evitare ripetizioni di codic
 {% else %} 0 {% endif %}
 {% endmacro %}
 
-# converte tempo di utility_meter in un modo più amichevole
+# converts utility_meter time to a friendlier way
 
 {% macro history(entity_id) %}
 {% set hours = states(entity_id) |float(0) %}
@@ -97,9 +97,9 @@ Dalla versione 2023.4 è possibile creare macro per evitare ripetizioni di codic
 {% endmacro %}
 
 ``` 
-- A questo punto è possibile riutilizzare con ogni entità il seguente codice doverlo riscrivere. 
+-At this point you can reuse with each entity the following code having to rewrite it.
 
-Come primo passo ho creato un sensore che incrementa il tempo al momento dell'utilizzo, in base a last_changed e allo stato dell'entity_id (nell'esempio switch.luce_studio).
+As a first step I create a sensor that increments the time at the time of utlization, based on the last_changed and the state of the entity_id (in the example switch.luce_studio).
 
 ``` 
 template:
@@ -111,13 +111,13 @@ template:
           {% from 'history_stats_custom.jinja' import time_on %}
           {{time_on('switch.luce_studio')}}
 ``` 
-Questo sensore viene passato successivamente a utility_meter, in modo che possa tracciare per tempo personalizzabile dalla piattaforma stessa (nell'esempio annuale)
+This sensor is successively passed to utility_meter, so that it can track for time customizable by the platform itself (in the example yearly)
 
 ``` 
 utility_meter:
   increase_time_year:
     sorgente: sensor.increment_time
-    ciclo: annuale
+    ciclo: yearly
 
 ```
 We now convert the sensor to a more readable value.

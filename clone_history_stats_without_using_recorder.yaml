@@ -39,3 +39,27 @@ script:
         target: 
           entity_id:
             - sensor.increase_time_year
+
+
+# AVAILABLE OF VERSION 2023.4 WITH FOLDER custom_templates
+
+template:
+  - sensor:
+      - name: "increment_time"
+        unit_of_measurement: min 
+        icon: mdi:history
+        state: >-
+          {% from 'history_stats_custom.jinja' import time_on %}
+          {{time_on('switch.luce_studio')}}
+
+  - sensor:
+      - name: "time_use_year"
+        icon: mdi:history
+        state: >-
+          {% from 'history_stats_custom.jinja' import history %}
+          {{ history(states('sensor.increase_time_year')) }}
+
+utility_meter:
+  increase_time_year:
+    sorgente: sensor.increment_time
+    ciclo: yearly
