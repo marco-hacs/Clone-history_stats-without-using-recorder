@@ -1,0 +1,25 @@
+# converte tempo di utility_meter in un modo più amichevole
+
+{% macro history(entity_id) %}
+{% set hours = states(entity_id) |float(0) %}
+{% set minutes = ((hours % 1) * 60) |int(0) %}
+{% set hours = (hours - (hours % 1)) |int(0) %}
+ {% set day = ((hours |int(0) /24))|int(0) %}
+  {% if day|int(0) >0 %}
+    {{day}}d {{(hours|int(0))-(day*24)}}h {{minutes}}m
+  {% elif hours|int(0) >0 %}
+    {{hours}}h {{minutes}}m
+  {% else %}
+    {{minutes}}min
+  {% endif %}
+{% endmacro %}
+
+
+
+# tempo di utilizzo in sec da passare ad utility_meter
+
+{% macro time_on(entity_id) %}
+{%if is_state(entity_id, 'on') and (as_timestamp(states[entity_id].last_changed)) <= as_timestamp(now())%}
+  {{ (as_timestamp(now()) - as_timestamp(states[entity_id].last_changed))/3600}}
+{% else %} 0 {% endif %}
+{% endmacro %}

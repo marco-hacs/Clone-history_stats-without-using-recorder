@@ -64,3 +64,69 @@ script:
 ``` 
 
 https://community.home-assistant.io/t/clone-history-stats-without-using-recorder/508119
+
+Dalla versione 2023.4 è possibile creare macro per evitare ripetizioni di codice.
+
+- Creare una nuova cartella in config dal nome custom_templates
+- Al suo interno creare un file .jinja. Nell'esempio history_stats_custom.jinja e copiare i seguenti template
+
+``` 
+
+# tempo di utilizzo in sec da passare ad utility_meter
+
+{% macro time_on(entity_id) %}
+{%if is_state(entity_id, 'on') and (as_timestamp(states[entity_id].last_changed)) <= as_timestamp(now())%}
+  {{ (as_timestamp(now()) - as_timestamp(states[entity_id].last_changed))/3600}}
+{% else %} 0 {% endif %}
+{% endmacro %}
+
+# converte tempo di utility_meter in un modo più amichevole
+
+{% macro history(entity_id) %}
+{% set hours = states(entity_id) |float(0) %}
+{% set minutes = ((hours % 1) * 60) |int(0) %}
+{% set hours = (hours - (hours % 1)) |int(0) %}
+ {% set day = ((hours |int(0) /24))|int(0) %}
+  {% if day|int(0) >0 %}
+    {{day}}d {{(hours|int(0))-(day*24)}}h {{minutes}}m
+  {% elif hours|int(0) >0 %}
+    {{hours}}h {{minutes}}m
+  {% else %}
+    {{minutes}}min
+  {% endif %}
+{% endmacro %}
+
+``` 
+- A questo punto è possibile riutilizzare con ogni entità il seguente codice doverlo riscrivere. 
+
+Come primo passo ho creato un sensore che incrementa il tempo al momento dell'utilizzo, in base a last_changed e allo stato dell'entity_id (nell'esempio switch.luce_studio).
+
+``` 
+template:
+  - sensor:
+      - name: "increment_time"
+        unit_of_measurement: min 
+        icon: mdi:history
+        state: >-
+          {% from 'history_stats_custom.jinja' import time_on %}
+          {{time_on('switch.luce_studio')}}
+``` 
+Questo sensore viene passato successivamente a utility_meter, in modo che possa tracciare per tempo personalizzabile dalla piattaforma stessa (nell'esempio annuale)
+
+``` 
+utility_meter:
+  increase_time_year:
+    sorgente: sensor.increment_time
+    ciclo: annuale
+
+```
+We now convert the sensor to a more readable value.
+``` 
+template:
+  - sensor:
+      - name: "time_use_year"
+        icon: mdi:history
+        state: >-
+          {% from 'history_stats_custom.jinja' import history %}
+          {{ history(states('sensor.increase_time_year')) }}
+``` 
